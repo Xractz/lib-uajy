@@ -12,7 +12,7 @@ This REST API is created by scraping data on
 - [CEK PENGGUNAAN RUANG](http://form.lib.uajy.ac.id/booking/CekJadwal.aspx)
 
 ## URL
-`https://room-lib-uajy.vercel.app/`
+`https://lib-uajy.vercel.app/`
 
 ## Endpoints
 
