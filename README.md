@@ -11,14 +11,8 @@ This REST API is created by scraping data on
 - [FORM BOOKING DIGITAL LIBRARY ROOM](http://form.lib.uajy.ac.id/booking/default.aspx)
 - [CEK PENGGUNAAN RUANG](http://form.lib.uajy.ac.id/booking/CekJadwal.aspx)
 
-## Installation
-
-```bash
-$ git clone https://github.com/Xractz/lib-uajy.git
-$ cd lib-uajy
-$ pip install -r requirements.txt
-$ python main.py
-```
+## URL
+`https://room-lib-uajy.vercel.app/`
 
 ## Endpoints
 
