@@ -4,6 +4,11 @@ from src.API import Room
 app = Flask(__name__)
 room = Room()
 
+room.fetch_data(room.url)
+for i in range(1, int(room.pageNumber) + 1):
+    room.fetch_page_data(i)
+room.group_data()
+
 @app.route('/booked', methods=['GET'])
 def get_booked_data():
     booked = room.groupedData
@@ -61,8 +66,4 @@ def internal_server_error(e):
     return jsonify({ "status" : 500, "message": "internal server error"}), 500
 
 if __name__ == '__main__':
-    room.fetch_data(room.url)
-    for i in range(1, int(room.pageNumber) + 1):
-        room.fetch_page_data(i)
-    room.group_data()
     app.run()
