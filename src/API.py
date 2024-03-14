@@ -127,12 +127,21 @@ class Room:
 
         response = self.session.post(self.urlPost, verify=False, data=data)
         text = response.text
-        self.name = re.findall(r'name="ctl00\$MainContent\$txtNama" type="text" value="(.*?)"', text, re.DOTALL)[0]
-        self.email = re.findall(r'name="ctl00\$MainContent\$txtEmail" type="text" value="(.*?)"', text, re.DOTALL)[0]
+        
+        if "Oooops..  NPM/NPP anda tidak terdaftar." in text:
+            self.name = None
+            self.email = None
+        else:
+            self.name = re.findall(r'name="ctl00\$MainContent\$txtNama" type="text" value="(.*?)"', text, re.DOTALL)[0]
+            self.email = re.findall(r'name="ctl00\$MainContent\$txtEmail" type="text" value="(.*?)"', text, re.DOTALL)[0]
 
     def booking_room(self, npm, room, date, time):
         date = f"{date[3:5]}/{date[:2]}/{date[6:]}"
         self.get_information(npm)
+
+        if self.name == None or self.email == None:
+            return "Oooops..  NPM/NPP anda tidak terdaftar."
+        
         data = {
             '__EVENTTARGET': 'ctl00$MainContent$btnDaftar',
             '__EVENTARGUMENT': '',
@@ -150,10 +159,6 @@ class Room:
 
         response = self.session.post(self.urlPost, verify=False, data=data)
         text = response.text
+        message = re.search(r"alert\('(.+?)'\)", text).group(1)
 
-        if "Waktu yang anda pilih sudah dibooking, silahkan memilih waktu yang kosong" in text:
-            return "Waktu yang anda pilih sudah dibooking, silahkan memilih waktu"
-        elif "Anda sudah booking di tanggal yang sama, silahkan memilih tanggal yang berbeda" in text:
-            return "Anda sudah booking di tanggal yang sama, silahkan memilih tanggal yang berbeda"
-        elif "Booking Success, please check your email" in text:
-            return "Booking Success, please check your email"
+        return message
