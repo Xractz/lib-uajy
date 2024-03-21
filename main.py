@@ -1,4 +1,5 @@
 from src.API import Room
+import json
 from flask_cors import CORS
 from flask import Flask, jsonify, request
 from flask_swagger_ui import get_swaggerui_blueprint
@@ -26,35 +27,35 @@ room.group_data()
 
 @app.route('/booked', methods=['GET'])
 def get_booked_data():
-    booked = room.groupedData
+    booked = room.groupedDataOutput
     if booked:
-        return jsonify({"bookedRoom": booked, "status": 200, "message": "Successfully retrieved the booked room."})
+        return json.dumps({"bookedRoom": booked, "status": 200, "message": "Successfully retrieved the booked room."})
     else:
-        return jsonify({"bookedRoom" : {"status": 404, "message": "Booked room not found"}})
+        return json.dumps({"bookedRoom" : {"status": 404, "message": "Booked room not found"}})
 
 @app.route('/booked/<date>', methods=['GET'])
 def get_booked_data_by_date(date):
     data_by_date = room.get_booked_data_by_date(date)
     if data_by_date:
-        return jsonify({"bookedRoom": data_by_date, "status": 200, "message": "Successfully retrieved the booked room by date."})
+        return json.dumps({"bookedRoom": data_by_date, "status": 200, "message": "Successfully retrieved the booked room by date."})
     else:
-        return jsonify({"bookedRoom" : {"status": 404, "message": "Booked room not found"}})
+        return json.dumps({"bookedRoom" : {"status": 404, "message": "Booked room not found"}})
 
 @app.route('/available', methods=['GET'])
 def get_available_rooms():
     available = room.get_available_rooms()
     if available:
-        return jsonify({"roomAvailable": available, "status": 200, "message": "Successfully retrieved the available room."})
+        return json.dumps({"roomAvailable": available, "status": 200, "message": "Successfully retrieved the available room."})
     else:
-        return jsonify({"roomAvailable": {"status": 404, "message": "Available room not found"}})
+        return json.dumps({"roomAvailable": {"status": 404, "message": "Available room not found"}})
 
 @app.route('/available/<date>', methods=['GET'])
 def get_available_rooms_by_date(date):
     available_by_date = room.get_available_rooms_by_date(date)
     if available_by_date:
-        return jsonify({"roomAvailable": available_by_date, "status": 200, "message": "Successfully retrieved the available room by date."})
+        return json.dumps({"roomAvailable": available_by_date, "status": 200, "message": "Successfully retrieved the available room by date."})
     else:
-        return jsonify({"roomAvailable": {"status": 404, "message": "Available room not found"}})
+        return json.dumps({"roomAvailable": {"status": 404, "message": "Available room not found"}})
     
 @app.route('/booking', methods=['POST'])
 def booking_room():
@@ -64,21 +65,21 @@ def booking_room():
     time = request.json['time']
     message = room.booking_room(npm, selected_room, date, time)
     if message:
-        return jsonify({"status": 200, "message": message})
+        return json.dumps({"status": 200, "data": message})
     else:
-        return jsonify({"status": 400, "message": "Booking room failed. Please try again."})
+        return json.dumps({"status": 400, "message": "Booking room failed. Please try again."})
 
 @app.errorhandler(404)
 def page_not_found(e):
-    return jsonify({ "status" : 404, "message": "not found"}), 404
+    return json.dumps({ "status" : 404, "message": "not found"}), 404
 
 @app.errorhandler(400)
 def bad_request(e):
-    return jsonify({ "status" : 400, "message": "bad request"}), 400
+    return json.dumps({ "status" : 400, "message": "bad request"}), 400
 
 @app.errorhandler(500)
 def internal_server_error(e):
-    return jsonify({ "status" : 500, "message": "internal server error"}), 500
+    return json.dumps({ "status" : 500, "message": "internal server error"}), 500
 
 if __name__ == '__main__':
     app.run()

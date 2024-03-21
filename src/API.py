@@ -14,6 +14,7 @@ class Room:
         self.email = None
         self.bookedData = []
         self.groupedData = {}
+        self.groupedDataOutput = {}
 
     def fetch_data(self, url):
         response = self.session.get(url, verify=False)
@@ -60,10 +61,21 @@ class Room:
 
     def group_data(self):
         for item in self.bookedData:
+            data = {'name': item['name'], 'time': item['time']}
             date = item['date']
+            room = item['room']
+
             if date not in self.groupedData:
                 self.groupedData[date] = []
-            self.groupedData[date].append(item)
+                self.groupedData[date].append(item)
+
+            if date not in self.groupedDataOutput:
+                self.groupedDataOutput[date] = {}
+            
+            if room not in self.groupedDataOutput[date]:
+                self.groupedDataOutput[date][room] = []
+            
+            self.groupedDataOutput[date][room].append(data)
 
     def get_booked_data_by_date(self, date):
         formatted_date = f"{date[:2]}/{date[2:4]}/{date[4:]}"
@@ -160,5 +172,6 @@ class Room:
         response = self.session.post(self.urlPost, verify=False, data=data)
         text = response.text
         message = re.search(r"alert\('(.+?)'\)", text).group(1)
+        data = {'message' : message, 'name' : self.name, 'npm' : npm}
 
-        return message
+        return data
