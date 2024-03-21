@@ -67,7 +67,8 @@ class Room:
 
             if date not in self.groupedData:
                 self.groupedData[date] = []
-                self.groupedData[date].append(item)
+                
+            self.groupedData[date].append(item)
 
             if date not in self.groupedDataOutput:
                 self.groupedDataOutput[date] = {}
