@@ -1,5 +1,5 @@
-import requests
-import re
+import re, requests
+from datetime import datetime
 
 class Room:
     def __init__(self):
@@ -101,12 +101,24 @@ class Room:
             for room in listRoom:
                 output[date][room] = list(room_availability[room])
 
+            current_time = datetime.now().strftime("%H.%M")
+            current_date = datetime.now().strftime("%d/%m/%Y")
+
             for booked in bookeds:
                 room = booked['room']
                 time = booked['time']
                 
                 if time in output[date][room]:
                     output[date][room].remove(time)
+                    
+                    if date == current_date:
+                        updated_times = []
+                        for times in output[current_date][room]:
+                            time_one = times.split(" ")[0]
+                            if time_one > current_time:
+                                updated_times.append(times)
+
+                        output[current_date][room] = updated_times
                 
                 output[date][room] = sorted((output[date][room]))
 
