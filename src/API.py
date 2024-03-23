@@ -1,4 +1,4 @@
-import re, requests
+import re, pytz, requests
 from datetime import datetime
 
 class Room:
@@ -15,6 +15,9 @@ class Room:
         self.bookedData = []
         self.groupedData = {}
         self.groupedDataOutput = {}
+        self.tz = pytz.timezone('Asia/Jakarta')
+        self.current_time = datetime.now(self.tz).strftime("%H.%M")
+        self.current_date = datetime.now(self.tz).strftime("%d/%m/%Y")
 
     def fetch_data(self, url):
         response = self.session.get(url, verify=False)
@@ -29,7 +32,6 @@ class Room:
             pageNumber = pageNumber[0].replace('\n', '').replace('\t', '').replace('\r', '')
             pageNumber = re.findall(r'>(\d+)</a>', pageNumber)
             self.pageNumber = max(pageNumber)
-
 
     def fetch_page_data(self, page):
         data = {
@@ -77,6 +79,7 @@ class Room:
                 self.groupedDataOutput[date][room] = []
             
             self.groupedDataOutput[date][room].append(data)
+            self.groupedDataOutput = {date: room for date, room in self.groupedDataOutput.items() if datetime.now(self.tz).strptime(date, '%d/%m/%Y') >= datetime.now(self.tz).strptime(self.current_date, '%d/%m/%Y')}
 
     def get_booked_data_by_date(self, date):
         formatted_date = f"{date[:2]}/{date[2:4]}/{date[4:]}"
@@ -100,10 +103,7 @@ class Room:
             
             for room in listRoom:
                 output[date][room] = list(room_availability[room])
-
-            current_time = datetime.now().strftime("%H.%M")
-            current_date = datetime.now().strftime("%d/%m/%Y")
-
+            
             for booked in bookeds:
                 room = booked['room']
                 time = booked['time']
@@ -111,28 +111,35 @@ class Room:
                 if time in output[date][room]:
                     output[date][room].remove(time)
                     
-                    if date == current_date:
+                    if date == self.current_date:
                         updated_times = []
-                        for times in output[current_date][room]:
+                        for times in output[self.current_date][room]:
                             time_one = times.split(" ")[0]
-                            if time_one > current_time:
+                            if time_one > self.current_time:
                                 updated_times.append(times)
+                        output[self.current_date][room] = updated_times
 
-                        output[current_date][room] = updated_times
-                
+                        for room, times in output[self.current_date].items():
+                            updated_times = []
+                            for time in times:
+                                time_one = time.split(" ")[0]
+                                if time_one > self.current_time:
+                                    updated_times.append(time)
+                            output[self.current_date][room] = updated_times
                 output[date][room] = sorted((output[date][room]))
 
+        output = {date: room for date, room in output.items() if datetime.now(self.tz).strptime(date, '%d/%m/%Y') >= datetime.now(self.tz).strptime(self.current_date, '%d/%m/%Y')}
         output = {date: {room: sorted(times) for room, times in rooms.items()} for date, rooms in output.items()}
 
         return output
-    
+
     def get_available_rooms_by_date(self, date):
         formatted_date = f"{date[:2]}/{date[2:4]}/{date[4:]}"
         if formatted_date in self.groupedData:
             return self.get_available_rooms()[formatted_date]
         else:
             return []
-        
+
     def get_information(self, npm):
         self.fetch_data(self.urlPost)
         data = {
