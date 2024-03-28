@@ -168,8 +168,12 @@ class Room:
             self.email = re.findall(r'name="ctl00\$MainContent\$txtEmail" type="text" value="(.*?)"', text, re.DOTALL)[0]
 
     def booking_room(self, npm, room, date, time):
-        date = f"{date[3:5]}/{date[:2]}/{date[6:]}"
         self.get_information(npm)
+        if (room == "" or date == "" or time == ""):
+            data = {'name' : self.name, 'npm' : npm}
+            return data
+        
+        date = f"{date[3:5]}/{date[:2]}/{date[6:]}"
 
         if self.name == None or self.email == None:
             return "Oooops..  NPM/NPP anda tidak terdaftar."
