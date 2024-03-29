@@ -138,12 +138,13 @@ class Room:
         if formatted_date in self.groupedData:
             return self.get_available_rooms()[formatted_date]
         else:
-            listTime = ["08.00 - 09.30 WIB", "09.30 - 11.00 WIB", "11.00 - 12.30 WIB", "12.30 - 14.00 WIB", "14.00 - 15.30 WIB", "15.30 - 17.00 WIB", "17.00 - 18.30 WIB"]
-            listRoom = ["Discussion Room 1", "Discussion Room 2", "Discussion Room 3", "Leisure Room 1"]
             output = {}
+            if formatted_date > self.current_date:
+                listTime = ["08.00 - 09.30 WIB", "09.30 - 11.00 WIB", "11.00 - 12.30 WIB", "12.30 - 14.00 WIB", "14.00 - 15.30 WIB", "15.30 - 17.00 WIB", "17.00 - 18.30 WIB"]
+                listRoom = ["Discussion Room 1", "Discussion Room 2", "Discussion Room 3", "Leisure Room 1"]
 
-            for room in listRoom:
-                output[room] = listTime
+                for room in listRoom:
+                    output[room] = listTime
 
             return output
 
