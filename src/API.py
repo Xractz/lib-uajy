@@ -173,7 +173,12 @@ class Room:
             self.email = None
         else:
             self.name = re.findall(r'name="ctl00\$MainContent\$txtNama" type="text" value="(.*?)"', text, re.DOTALL)[0]
-            self.email = re.findall(r'name="ctl00\$MainContent\$txtEmail" type="text" value="(.*?)"', text, re.DOTALL)[0]
+            email_matches = re.findall(r'name="ctl00\$MainContent\$txtEmail" type="text" value="(.*?)"', text, re.DOTALL)
+            if email_matches:
+                email = email_matches[0]
+                self.email = email if email else ""
+            else:
+                self.email = "" 
 
     def booking_room(self, npm, room, date, time):
         self.get_information(npm)
