@@ -184,20 +184,6 @@
                         "15.30 - 17.00 WIB",
                         "17.00 - 18.30 WIB"
                       ]
-                    },
-                    "09/03/2024": {
-                      "Discussion Room 1": [
-                          ...
-                      ],
-                      "Discussion Room 2": [
-                          ...
-                      ],
-                      "Discussion Room 3": [
-                          ...
-                      ],
-                      "Leisure Room 1": [
-                          ...
-                      ]
                     }
                   },
                   "status": 200
