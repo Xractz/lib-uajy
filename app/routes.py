@@ -39,6 +39,7 @@ def get_available_rooms():
 
 @app.route('/available/<date>', methods=['GET'])
 def get_available_rooms_by_date(date):
+    fetch_data(room)
     available_by_date = room.get_available_rooms_by_date(date)
     if available_by_date:
       return json.dumps({"roomAvailable": available_by_date, "status": 200, "message": "Successfully retrieved the available room by date."})
