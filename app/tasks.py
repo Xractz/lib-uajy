@@ -288,7 +288,9 @@ class Plagiarism(FetchData):
 
     response = self.session.post(self.urlPlagiarism, verify=False, data=data, files=file)
     text = response.text
-    message = re.search(r"alert\('(.+?)'\)", text).group(1)
-    data = {'message' : message, 'npm' : npm, 'name' : self.name, 'email' : self.email, 'phone' : self.noPhone}
-
-    return data
+    try:
+      message = re.search(r"alert\('(.+?)'\)", text).group(1)
+      data = {'message' : message, 'npm' : npm, 'name' : self.name, 'email' : self.email, 'phone' : self.noPhone}
+      return data
+    except:
+      return False
