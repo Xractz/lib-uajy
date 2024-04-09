@@ -1,8 +1,8 @@
 import re, pytz, requests
-from datetime import datetime
+from datetime import datetime, date
 
-class Room:
-  def __init__(self):
+class FetchData:
+  def __init__(self): 
     self.session = requests.Session()
     self.url = "http://form.lib.uajy.ac.id/booking/CekJadwal.aspx"
     self.urlPost = "http://form.lib.uajy.ac.id/booking/default.aspx"
@@ -19,7 +19,7 @@ class Room:
     self.current_time = datetime.now(self.tz).strftime("%H.%M")
     self.current_date = datetime.now(self.tz).strftime("%d/%m/%Y")
 
-  def fetch_data(self, url):
+  def fetch_max_page(self, url):
     response = self.session.get(url, verify=False)
     text = response.text
 
@@ -81,6 +81,20 @@ class Room:
       self.groupedDataOutput[date][room].append(data)
       self.groupedDataOutput = {date: room for date, room in self.groupedDataOutput.items() if datetime.now(self.tz).strptime(date, '%d/%m/%Y') >= datetime.now(self.tz).strptime(self.current_date, '%d/%m/%Y')}
 
+  def fetch_all_data(self):
+    self.fetch_max_page(self.url)
+    for i in range(1, int(self.pageNumber) + 1):
+      self.fetch_page_data(i)
+    self.group_data()
+
+class Room(FetchData):
+  def __init__(self):
+    super().__init__()
+    super().fetch_all_data()
+
+  def get_booked_data(self):
+    return self.groupedDataOutput
+  
   def get_booked_data_by_date(self, date):
     formatted_date = f"{date[:2]}/{date[2:4]}/{date[4:]}"
     if formatted_date in self.groupedData:
@@ -133,13 +147,16 @@ class Room:
 
     return output
 
-  def get_available_rooms_by_date(self, date):
-    formatted_date = f"{date[:2]}/{date[2:4]}/{date[4:]}"
-    if formatted_date in self.groupedData:
+  def get_available_rooms_by_date(self, date_str):
+    formatted_date = f"{date_str[:2]}/{date_str[2:4]}/{date_str[4:]}"
+    if formatted_date in self.groupedDataOutput:
       return self.get_available_rooms()[formatted_date]
     else:
-      output = {}
-      if formatted_date > self.current_date:
+      formatted_date = date(int(date_str[4:]), int(date_str[2:4].lstrip('0')), int(date_str[:2].lstrip('0')))
+      date_today = date.today()
+      print(formatted_date, date_today)
+      if formatted_date >= date_today:
+        output = {}
         listTime = ["08.00 - 09.30 WIB", "09.30 - 11.00 WIB", "11.00 - 12.30 WIB", "12.30 - 14.00 WIB", "14.00 - 15.30 WIB", "15.30 - 17.00 WIB", "17.00 - 18.30 WIB"]
         listRoom = ["Discussion Room 1", "Discussion Room 2", "Discussion Room 3", "Leisure Room 1"]
 
@@ -149,7 +166,7 @@ class Room:
         return output
 
   def get_information(self, npm):
-    self.fetch_data(self.urlPost)
+    super().fetch_max_page(self.urlPost)
     data = {
       '__EVENTTARGET': '',
       '__EVENTARGUMENT': '',
