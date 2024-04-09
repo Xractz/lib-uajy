@@ -154,7 +154,6 @@ class Room(FetchData):
     else:
       formatted_date = date(int(date_str[4:]), int(date_str[2:4].lstrip('0')), int(date_str[:2].lstrip('0')))
       date_today = date.today()
-      print(formatted_date, date_today)
       if formatted_date >= date_today:
         output = {}
         listTime = ["08.00 - 09.30 WIB", "09.30 - 11.00 WIB", "11.00 - 12.30 WIB", "12.30 - 14.00 WIB", "14.00 - 15.30 WIB", "15.30 - 17.00 WIB", "17.00 - 18.30 WIB"]
@@ -228,5 +227,68 @@ class Room(FetchData):
     text = response.text
     message = re.search(r"alert\('(.+?)'\)", text).group(1)
     data = {'message' : message, 'name' : self.name, 'npm' : npm}
+
+    return data
+
+class Plagiarism(FetchData):
+  def __init__(self):
+    super().__init__()
+    self.urlPlagiarism = "http://form.lib.uajy.ac.id/plagiarisme/"
+    self.name = None
+    self.email = None
+    self.noPhone = None
+
+  def get_information(self, npm):
+    super().fetch_max_page(self.urlPlagiarism)
+
+    data = {
+    '__EVENTTARGET': 'ctl00$MainContent$TextBox1',
+    '__EVENTARGUMENT': '',
+    '__LASTFOCUS': '',
+    '__VIEWSTATE': self.viewState,
+    '__VIEWSTATEGENERATOR': self.viewStateGenerator,
+    '__EVENTVALIDATION': self.eventValidation,
+    'ctl00$MainContent$TextBox1': npm,
+    'ctl00$MainContent$TxtEmail': '',
+    'ctl00$MainContent$TxtTlp': '',
+    'ctl00$MainContent$txtTitle': '',
+    'ctl00$MainContent$FileUpload1': '',
+    }
+
+    response = self.session.post(self.urlPlagiarism, verify=False, data=data).text
+    try:
+      self.name = re.search(r'name="ctl00\$MainContent\$txtNama" type="text" value="(.*?)"', response).group(1)
+      self.email = re.search(r'name="ctl00\$MainContent\$TxtEmail" type="text" value="(.*?)"', response).group(1)
+      self.noPhone = re.search(r'name="ctl00\$MainContent\$TxtTlp" type="text" value="(.*?)"', response).group(1)
+    except:
+      return False
+
+    data = { 
+      'name' : self.name,
+      'email' : self.email,
+      'phone' : self.noPhone
+    }
+
+    return data
+  
+  def turnitin(self, npm, title, file):
+    data = {
+    '__EVENTTARGET': '',
+    '__EVENTARGUMENT': '',
+    '__LASTFOCUS': '',
+    '__VIEWSTATE': self.viewState,
+    '__VIEWSTATEGENERATOR': self.viewStateGenerator,
+    '__EVENTVALIDATION': self.eventValidation,
+    'ctl00$MainContent$TextBox1': npm,
+    'ctl00$MainContent$TxtEmail': self.email,
+    'ctl00$MainContent$TxtTlp': self.noPhone,
+    'ctl00$MainContent$txtTitle': title,
+    'ctl00$MainContent$Button1': 'ADD'
+    }
+
+    response = self.session.post(self.urlPlagiarism, verify=False, data=data, files=file)
+    text = response.text
+    message = re.search(r"alert\('(.+?)'\)", text).group(1)
+    data = {'message' : message, 'npm' : npm, 'name' : self.name, 'email' : self.email, 'phone' : self.noPhone}
 
     return data
