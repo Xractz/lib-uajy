@@ -234,6 +234,7 @@ class Plagiarism(FetchData):
   def __init__(self):
     super().__init__()
     self.urlPlagiarism = "http://form.lib.uajy.ac.id/plagiarisme/"
+    self.urlPlagiarismStatus = "http://form.lib.uajy.ac.id/plagiarisme/status.aspx"
     self.name = None
     self.email = None
     self.noPhone = None
@@ -293,4 +294,44 @@ class Plagiarism(FetchData):
       data = {'message' : message, 'npm' : npm, 'name' : self.name, 'email' : self.email, 'phone' : self.noPhone}
       return data
     except:
+      return False
+
+  def get_turnitin_status(self, npm):
+    super().fetch_max_page(self.urlPlagiarismStatus)
+    dataTurnitin = {"message": "Successfully retrieved data"}
+
+    data = {
+      '__VIEWSTATE': self.viewState,
+      '__VIEWSTATEGENERATOR': self.viewStateGenerator,
+      '__VIEWSTATEENCRYPTED': '',
+      '__EVENTVALIDATION': self.eventValidation,
+      'ctl00$MainContent$txtNPM': npm,
+      'ctl00$MainContent$btnCek': 'CEK'
+    }
+
+    response = self.session.post(self.urlPlagiarismStatus, verify=False, data=data).text
+
+    npmNotFound = re.search(r"alert\('(.+?)'\)", response)
+
+    if npmNotFound:
+      npmNotFound = npmNotFound.group(1)
+      return npmNotFound
+
+    table_pattern = r'<table[^>]*class="GridViewStyle"[^>]*>(.*?)</table>'
+    table_match = re.search(table_pattern, response, re.DOTALL)
+
+    if table_match:
+      response = table_match.group(1)
+      row_pattern = r'<tr[^>]*>\s*<td[^>]*>\s*(\d+)\s*</td><td[^>]*>(.*?)</td><td[^>]*>(.*?)</td><td[^>]*>(.*?)</td><td[^>]*>(.*?)</td>\s*</tr>'
+      matches = re.findall(row_pattern, response, re.DOTALL)
+
+      for match in matches:
+        dataTurnitin[match[0]] = {
+          'title': match[3].split('-')[2].strip().replace("\n", "").replace("\r", ""),
+          'status': match[4]
+        }
+
+      return dataTurnitin
+
+    else:
       return False

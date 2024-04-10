@@ -114,7 +114,25 @@ def turnitin():
     return jsonify({"status": 200, "data": message}), 200
   else:
     return jsonify({"status": 400, "message": "Error processing the file"}), 400
-  
+
+@app.route('/turnitin/status', methods=['POST'])
+def turnitin_status():
+  data = request.json
+  npm = data.get('npm', None)
+
+  if not npm:
+    return jsonify({'error': 'No NPM field in request', 'status': 400}), 400
+  elif npm and len(data) > 1:
+    return jsonify({'error': 'Key must be npm', 'status': 400}), 400
+
+  message = plagiarism.get_turnitin_status(npm)
+  if "Oooops..  NPM tidak terdaftar" in message:
+    return jsonify({"status": 400, "data": {"message": message}}), 400
+  elif message:
+    return jsonify({"status": 200, "data": message}), 200
+  else:
+    return jsonify({"status": 400, "message": "Error processing the data"}), 400
+
 @app.errorhandler(400)
 def bad_request(e):
   return jsonify({ "status" : 400, "message": "Bad Request"}), 400
