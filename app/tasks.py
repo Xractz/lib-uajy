@@ -298,7 +298,7 @@ class Plagiarism(FetchData):
 
   def get_turnitin_status(self, npm):
     super().fetch_max_page(self.urlPlagiarismStatus)
-    dataTurnitin = {"message": "Successfully retrieved data"}
+    dataTurnitin = {}
 
     data = {
       '__VIEWSTATE': self.viewState,
@@ -326,7 +326,7 @@ class Plagiarism(FetchData):
       matches = re.findall(row_pattern, response, re.DOTALL)
 
       for match in matches:
-        dataTurnitin[match[0]] = {
+        dataTurnitin[int(match[0])] = {
           'title': match[3].split('-')[2].strip().replace("\n", "").replace("\r", ""),
           'status': match[4]
         }

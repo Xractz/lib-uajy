@@ -129,7 +129,7 @@ def turnitin_status():
   if "Oooops..  NPM tidak terdaftar" in message:
     return jsonify({"status": 400, "data": {"message": message}}), 400
   elif message:
-    return jsonify({"status": 200, "data": message}), 200
+    return jsonify({"status": 200, "message": "Successfully retrieved data", "data": message}), 200
   else:
     return jsonify({"status": 400, "message": "Error processing the data"}), 400
 
