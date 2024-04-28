@@ -13,6 +13,3 @@ This REST API is created by scraping data on
 This API is documented using *SWAGGER*
 
 **[API DOCUMENTATIONS](https://lib-uajy.vercel.app/docs)**
-
-## NEXT UPDATES
-Plagiarism tools
