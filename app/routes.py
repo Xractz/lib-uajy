@@ -1,150 +1,451 @@
-from app import app
-from flask import request, jsonify
-from app.tasks import Plagiarism, Room
+from app.main import Room, Plagiarism
+from pydantic import BaseModel, Field
+from typing import Union, Annotated
+from fastapi.responses import JSONResponse
+from fastapi import status, APIRouter, File, UploadFile, Form
 
+router = APIRouter()
 room = Room()
-plagiarism = Plagiarism()
 
-@app.route('/booked', methods=['GET'])
-def get_booked_data():
-  booked = room.get_booked_data()
-  if booked:
-    return jsonify({"bookedRoom": booked, "status": 200, "message": "Successfully retrieved the booked room."}), 200
-  else:
-    return jsonify({"bookedRoom" : {"status": 404, "message": "Booked room not found"}})
-
-@app.route('/booked/<date>', methods=['GET'])
-def get_booked_data_by_date(date):
-  data_by_date = room.get_booked_data_by_date(date)
-  if data_by_date:
-    return jsonify({"bookedRoom": data_by_date, "status": 200, "message": "Successfully retrieved the booked room by date."}), 200
-  else:
-    return jsonify({"bookedRoom" : {"status": 404, "message": "Booked room not found"}})
-
-@app.route('/available', methods=['GET'])
-def get_available_rooms():
-  available = room.get_available_rooms()
-  if available:
-    return jsonify({"roomAvailable": available, "status": 200, "message": "Successfully retrieved the available room."}), 200
-  else:
-    return jsonify({"roomAvailable": {"status": 404, "message": "Available room not found"}})
-
-@app.route('/available/<date>', methods=['GET'])
-def get_available_rooms_by_date(date):
-    available_by_date = room.get_available_rooms_by_date(date)
-    if available_by_date:
-      return jsonify({"roomAvailable": available_by_date, "status": 200, "message": "Successfully retrieved the available room by date."}), 200
-    else:
-      return jsonify({"roomAvailable": {"status": 404, "message": "Available room not found"}})
-    
-@app.route('/booking', methods=['POST'])
-def booking_room():
-  data = request.json
-  
-  npm = data['npm']
-  selected_room = data.get('room', None)
-  date = data.get('date', None)
-  time = data.get('time', None)
-
-  if 'npm' not in data or not data['npm'] and 'room' not in data and 'date' not in data and 'time' not in data:
-    return jsonify({"status": 400, "message": "Missing required fields (npm, room, date, time)"}), 400
-  elif not npm:
-    return jsonify({"status": 400, "message": "Required fields cannot be empty"}), 400
-  
-
-  if selected_room is None or date is None or time is None:
-    message = room.booking_room(npm, "", "", "")
-  else:
-    message = room.booking_room(npm, selected_room, date, time)
-
-  if message:
-    return jsonify({"status": 200, "data": message}), 200
-  else:
-    return jsonify({"status": 400, "message": "Booking room failed. Please try again."}), 400
-
-@app.route('/student', methods=['POST'])
-def student():
-  data = request.json
-  npm = data.get('npm', None)
-  
-  if len(data) > 1 or not npm:
-    return jsonify({"status": 400, "message": "Key must be 'npm'"}), 400
-  elif len(npm) == 0:
-    return jsonify({"status": 400, "message": "Error no npm found"}), 400
-  
-  message = plagiarism.get_information(npm)
-  if message:
-    return jsonify({"status": 200, "dataStudent": message}), 200
-  else:
-    return jsonify({"status": 400, "dataStudent": "Not Found"}), 400
-
-@app.route('/turnitin', methods=['POST'])
-def turnitin():
-  if 'file' not in request.files:
-    return jsonify({'error': 'No file part in request', 'status': 400}), 400
-
-  file = request.files['file']
-  mimetype = file.mimetype
-  allowed_extensions = ['pdf', 'docx', 'doc']
-
-  form = request.form
-  npm = form.get('npm', None)
-  title = form.get('title', None)
-  content_file = file.read()
-
-  if not npm or not title:
-    return jsonify({'error': 'NPM or title field is missing or None', 'status': 400}), 400
-  elif not file.filename:
-    return jsonify({'error': 'No selected file', 'status': 400}), 400
-  elif file.filename.split('.')[-1].lower() not in allowed_extensions or mimetype != 'application/pdf' and mimetype != 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' and mimetype != 'application/msword':
-    return jsonify({'error': 'Please upload a valid PDF or Word file', 'status': 400}), 400
-  elif len(content_file) >= 33 * 1024 * 1024:
-    return jsonify({'error': 'File size exceeds maximum allowed size (33 MB)', 'status': 413}), 413
-  
-  status = plagiarism.get_information(npm)
-  if not status:
-    return jsonify({"status": 400, "message": "NPM Not Found"}), 400
-
-  files = {
-    'ctl00$MainContent$FileUpload1': (file.filename, content_file, mimetype)
+@router.get(
+  "/booked",
+  response_model=dict,
+  tags=["BOOKED ROOM"],
+  summary="Get booked room data",
+  description="Get the booked room data",
+  responses={
+    200: {
+      "description": "Successfully retrieved the booked room",
+      "content": {
+        "application/json": {
+          "example": {
+            "bookedRoom": {
+              "29/04/2024": {
+                "Discussion Room 1": [
+                  {
+                  "name": "name",
+                  "time": "14.00 - 15.30 WIB"
+                  },
+                  {
+                  "name": "name",
+                  "time": "15.30 - 17.00 WIB"
+                  },
+                ],
+                "Discussion Room 2" : [],
+                "Discussion Room 3" : [],
+                "Leisure Room 1":[]
+              }
+            },
+            "message": "Successfully retrieved the booked room."
+          }
+        }
+      }
+    },
+    404: {
+      "description": "Booked room not found",
+      "content": {
+        "application/json": {
+          "example": {
+            "bookedRoom": {},
+            "message": "Booked room not found"
+          }
+        }
+      }
+    }
   }
+)
+async def all_booked():
+  message, status = room.get_booked_data()
+  return JSONResponse(content=message, status_code=status)
+  
+@router.get(
+  "/booked/{date}",
+  response_model=dict,
+  tags=["BOOKED ROOM"],
+  summary="Get booked room data by date",
+  description="Get the booked room data by date",
+  responses={
+    200: {
+      "description": "Successfully retrieved the booked room by date",
+      "content": {
+        "application/json": {
+          "example": {
+            "bookedRoom": [
+              {
+                "room": "Discussion Room 1",
+                "date": "29/04/2024",
+                "time": "14.00 - 15.30 WIB",
+                "name": "Jhon Abe"
+              },
+              {
+                "room": "Discussion Room 2",
+                "date": "29/04/2024",
+                "time": "14.00 - 15.30 WIB",
+                "name": "Jhon Abe"
+              },
+              {
+                "room": "Discussion Room 3",
+                "date": "29/04/2024",
+                "time": "14.00 - 15.30 WIB",
+                "name": "Jhon Abe"
+              },
+              {
+                "room": "Leisure Room 1",
+                "date": "29/04/2024",
+                "time": "14.00 - 15.30 WIB",
+                "name": "Jhon Abe"
+              }
+            ],
+            "message": "Successfully retrieved the booked room by date."
+          }
+        }
+      }
+    },
+    404: {
+      "description": "Booked room not found",
+      "content": {
+        "application/json": {
+          "example": {
+            "bookedRoom": {},
+            "message": "Booked room not found"
+          }
+        }
+      }
+    }
+  }
+)
+async def booked_by_date(date: str):
+  message, status = room.get_booked_data_by_date(date)
+  return JSONResponse(content=message, status_code=status)
+  
+@router.get(
+  "/available",
+  response_model=dict,
+  tags=["AVAILABLE ROOM"],
+  summary="Get available room data",
+  description="Get the available room data",
+  responses={
+    200: {
+      "description": "Successfully retrieved the available room",
+      "content": {
+        "application/json": {
+          "example": {
+            "roomAvailable": {
+              "29/04/2024": {
+                "Discussion Room 1" : [],
+                "Discussion Room 2" : [],
+                "Discussion Room 3" : [],
+                "Leisure Room 1" : []
+              },
+              "30/04/2024": {
+                "Discussion Room 1" : [
+                  "08.00 - 09.30 WIB",
+                  "09.30 - 11.00 WIB",
+                  "17.00 - 18.30 WIB"  
+                ],
+                "Discussion Room 2" : [
+                  "08.00 - 09.30 WIB",
+                  "17.00 - 18.30 WIB"
+                ],
+                "Discussion Room 3" : [
+                  "17.00 - 18.30 WIB"
+                ],
+                "Leisure Room 1" : []
+              }
+            },
+            "message": "Successfully retrieved the available room."
+          }
+        }
+      }
+    },
+    404: {
+      "description": "There's not available room right now",
+      "content": {
+        "application/json": {
+          "example": {
+            "roomAvailable": {},
+            "message": "There's no available room right now"
+          }
+        }
+      }
+    }
+  }
+)
+def available_rooms():
+  message, status = room.get_available_rooms()
+  return JSONResponse(content=message, status_code=status)
 
-  message = plagiarism.turnitin(npm, title, files)
-  if message:
-    return jsonify({"status": 200, "data": message}), 200
-  else:
-    return jsonify({"status": 400, "message": "Error processing the file"}), 400
+@router.get(
+  "/available/{date}",
+  response_model=dict,
+  tags=["AVAILABLE ROOM"],
+  summary="Get available room data by date",
+  description="Get the available room data by date",
+  responses={
+    200: {
+      "description": "Successfully retrieved the available room by date",
+      "content": {
+        "application/json": {
+          "example": {
+            "roomAvailable": {
+              "Discussion Room 1" : [
+                "08.00 - 09.30 WIB",
+                "09.30 - 11.00 WIB",
+                "17.00 - 18.30 WIB"  
+              ],
+              "Discussion Room 2" : [
+                "08.00 - 09.30 WIB",
+                "17.00 - 18.30 WIB"
+              ],
+              "Discussion Room 3" : [
+                "17.00 - 18.30 WIB"
+              ],
+              "Leisure Room 1" : []
+            },
+            "message": "Successfully retrieved the available room by date."
+          }
+        }
+      }
+    },
+    400: {
+      "description": "Invalid date format",
+      "content": {
+        "application/json": {
+          "example": {
+            "message": "Invalid date format. Please use the format 'dd/mm/yyyy'"
+          }
+        }
+      }
+    },
+    404: {
+      "description": "There's not available room right now",
+      "content": {
+        "application/json": {
+          "example": {
+            "roomAvailable": {},
+            "message": "There's no available room right now"
+          }
+        }
+      }
+    }
+  }
+)
+def available_rooms_by_date(date: str):
+  try:
+    message, status = room.get_available_rooms_by_date(date)
+  except ValueError as e:
+    return JSONResponse(content={"message": str(e)}, status_code=400)
+  
+  return JSONResponse(content=message, status_code=status)
 
-@app.route('/turnitin/status', methods=['POST'])
-def turnitin_status():
-  data = request.json
-  npm = data.get('npm', None)
+class BookingRoom(BaseModel):
+  npm: int
+  room: Union[str, None] = None
+  date: Union[str, None] = None
+  time: Union[str, None] = None
 
-  if not npm:
-    return jsonify({'error': 'No NPM field in request', 'status': 400}), 400
-  elif npm and len(data) > 1:
-    return jsonify({'error': 'Key must be npm', 'status': 400}), 400
+@router.post(
+  "/booking",
+  response_model=dict,
+  tags=["BOOKING ROOM"],
+  summary="Booking room",
+  description="Booking a room",
+  responses={
+    200: {
+      "description": "Successfully booked the room",
+      "content": {
+        "application/json": {
+          "schema": {
+            "required": ["npm", "room", "date", "time"],
+            "type": "object",
+            "properties": {
+              "npm": {"type": "integer", "example": 1234567890},
+              "room": {"type": "string", "example": ["Discussion Room 1", "Discussion Room 2", "Discussion Room 3", "Leisure Room 1"]},
+              "date": {"type": "string", "example": "29/04/2024"},
+              "time": {"type": "string", "example": ["08.00 - 09.30 WIB", "09.30 - 11.00 WIB", "11.00 - 12.30 WIB", "12.30 - 14.00 WIB", "14.00 - 15.30 WIB", "15.30 - 17.00 WIB", "17.00 - 18.30 WIB"]}
+            },
+          },
+          "example": {
+            "message": "Booking Success, please check your email",
+            "npm": 1234567890,
+            "name": "Jhon Doe"
+          }
+        }
+      }
+    },
+    400: {
+      "description": "Booking room failed",
+      "content": {
+        "application/json": {
+          "schema": {
+            "required": ["room", "date", "time"],
+            "type": "object",
+            "properties": {
+              "room": {"type": "string", "example": ["Discussion Room 1", "Discussion Room 2", "Discussion Room 3", "Leisure Room 1"]},
+              "date": {"type": "string", "example": "29/04/2024"},
+              "time": {"type": "string", "example": ["08.00 - 09.30 WIB", "09.30 - 11.00 WIB", "11.00 - 12.30 WIB", "12.30 - 14.00 WIB", "14.00 - 15.30 WIB", "15.30 - 17.00 WIB", "17.00 - 18.30 WIB"]}
+            },
+          },
+          "example": {
+            "message": [
+              "Booking room failed. Please try again.",
+              "Valid rooms field are Discussion Room 1, Discussion Room 2, Discussion Room 3, or Leisure Room 1",
+              "Please use DD/MM/YYYY format for 'date' field",
+              "Valid time slots are 08.00 - 09.30 WIB, 09.30 - 11.00 WIB, 11.00 - 12.30 WIB, 12.30 - 14.00 WIB, 14.00 - 15.30 WIB, 15.30 - 17.00 WIB, or 17.00 - 18.30 WIB",
+              "Cannot book room at this time"
+            ],
+          }
+        }
+      }
+    },
+  404: {
+    "description": "NPM Not Found",
+    "content": {
+      "application/json": {
+        "example": {
+          "message": "Oooops...  Your NPM/NPP is not registered."
+        }
+      }
+    }
+  }
+  }
+)
+def booking_room(data: BookingRoom):
+  message, status = room.booking_room(data.npm, data.room, data.date, data.time)
+  return JSONResponse(content=message, status_code=status)
+  
+@router.post(
+  "/turnitin", 
+  tags=["PLAGIARISM CHECKER"],
+  summary="Upload file to check plagiarism",
+  description="Upload file to check plagiarism",
+  responses={
+    200: {
+      "description": "File uploaded successfully",
+      "content": {
+        "application/json": {
+          "example": {
+            'npm' : 1234567890,
+            'name' : "Jhon Abe",
+            'email' : "jhonabe@gmail.com",
+            'phone' : "628773433xxxx",
+            'document': {
+              'title': "HUBUNGAN KARAKTERISTIK INDIVIDU DENGAN KINERJA KARYAWAN", 
+              'filename':"skripsiku_final.pdf"
+            },
+            'message' : "Terimakasih sudah melakukan input cek plagiarisme, silahkan cek email Anda"
+          }
+        }
+      }
+    },
+    400: {
+      "description": "File upload failed",
+      "content": {
+        "application/json": {
+          "example": {
+            "message": "There was an error uploading the file"
+          }
+        }
+      }
+    },
+    404: {
+      "description": "NPM Not Found",
+      "content": {
+        "application/json": {
+          "example": {
+            "message": "NPM Not Found"
+          }
+        }
+      }
+    },
+    413:{
+      "description": "File size exceeds maximum allowed size (33 MB)",
+      "content": {
+        "application/json": {
+          "example": {
+            "message": "File size exceeds maximum allowed size (33 MB)"
+          }
+        }
+      }
+    },
+    415:{
+      "description": "Please upload a valid PDF or Word file",
+      "content": {
+        "application/json": {
+          "example": {
+            "message": "Please upload a valid PDF or Word file"
+          }
+        }
+      }
+    },
+    500: {
+      "description": "Error processing the file",
+      "content": {
+        "application/json": {
+          "example": {
+            "message": "Error processing the file"
+          }
+        }
+      }
+    }
+  }
+)
+def upload(
+  file: Annotated[UploadFile, File(...)],
+  npm: Annotated[int, Form(...)],
+  title: Annotated[str, Form(...)]
+):
+  plagiarism = Plagiarism(npm, title, file)
+  message, status = plagiarism.upload()
+  
+  return JSONResponse(content=message, status_code=status)
 
-  message = plagiarism.get_turnitin_status(npm)
-  if "Oooops..  NPM tidak terdaftar" in message:
-    return jsonify({"status": 400, "data": {"message": message}}), 400
-  elif message:
-    return jsonify({"status": 200, "message": "Successfully retrieved data", "data": message}), 200
-  else:
-    return jsonify({"status": 400, "message": "Error processing the data"}), 400
+class PlagiarismStatus(BaseModel):
+  npm: int = Field(..., example=1234567890)
 
-@app.errorhandler(400)
-def bad_request(e):
-  return jsonify({ "status" : 400, "message": "Bad Request"}), 400
-
-@app.errorhandler(404)
-def page_not_found(e):
-  return jsonify({ "status" : 404, "message": "Not Found"}), 404
-
-@app.errorhandler(405)
-def method_not_allowed(e):
-  return jsonify({ "status" : 405, "message": "Method Not Allowed"}), 405
-
-@app.errorhandler(500)
-def internal_server_error(e):
-  return jsonify({ "status" : 500, "message": "Internal Server Error"}), 500
+@router.post(
+  "/turnitin/status", 
+  tags=["PLAGIARISM CHECKER"], 
+  summary="Check plagiarism status", 
+  description="Check plagiarism status",
+  responses={
+    200: {
+      "description": "Plagiarism status retrieved successfully",
+      "content": {
+        "application/json": {
+          "example": {
+            "1": {
+              "title": "HUBUNGAN KARAKTERISTIK INDIVIDU DENGAN KINERJA KARYAWAN",
+              "status": "Awaiting"
+            }
+          }
+        }
+      }
+    },
+    404: {
+      "description": "NPM Not Found",
+      "content": {
+        "application/json": {
+          "example": {
+            "message": "NPM Not Found"
+          }
+        }
+      }
+    },
+    500: {
+      "description": "Error retrieving plagiarism status",
+      "content": {
+        "application/json": {
+          "example": {
+            "message": "Error retrieving plagiarism status"
+          }
+        }
+      }
+    }
+  }
+)
+def check_status(data: PlagiarismStatus):
+  plagiarism = Plagiarism(data.npm)
+  message, status = plagiarism.status()
+  
+  return JSONResponse(content=message, status_code=status)
