@@ -1,5 +1,7 @@
 # Library Atma Jaya Yogyakarta University (UAJY)
 
+![image](https://github.com/Xractz/lib-uajy/assets/48348791/3adaf772-be9a-4db2-a6f5-ce130c574f9d)
+
 ### Unofficial REST API Library Atma Jaya Yogyakarta University (UAJY)
 
 ## Overview
