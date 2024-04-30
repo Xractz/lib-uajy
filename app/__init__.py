@@ -1,21 +1,12 @@
-from flask import Flask
-from flask_cors import CORS
-from flask_swagger_ui import get_swaggerui_blueprint
+from fastapi import FastAPI
+from app.routes import router
 
-app = Flask(__name__)
-CORS(app)
-
-SWAGGER_URL="/docs"
-API_URL="/static/swagger.json"
-
-swagger_ui_blueprint = get_swaggerui_blueprint(
-    SWAGGER_URL,
-    API_URL,
-    config={
-        'app_name': 'Access API'
-    }
+app = FastAPI(
+    title="Library Universitas Atma Jaya Yogyakarta",
+    version="0.1.0", 
+    description="API untuk peminjaman buku di perpustakaan dan cek plagiarisme UAJY", 
+    docs_url="/",
+    redoc_url="/redocs",
 )
 
-app.register_blueprint(swagger_ui_blueprint, url_prefix=SWAGGER_URL)
-
-from app import routes
+app.include_router(router)
