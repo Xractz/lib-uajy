@@ -8,7 +8,7 @@
 
 This API is used to manage room bookings. Such as viewing all booked rooms or by date, viewing all unbooked rooms or by date, being able to book rooms, and plagiarism features.
 
-API ini digunakan untuk mengelola pemesanan ruang. Seperti melihat semua ruang yang dipesan atau berdasarkan tanggal, melihat semua kamar yang belum dipesan atau berdasarkan tanggal, dapat memesan kamar, dan fitur plagiarisme.
+API ini digunakan untuk mengelola pemesanan ruang. Seperti melihat semua ruang yang dipesan atau berdasarkan tanggal, melihat semua ruang yang belum dipesan atau berdasarkan tanggal, dapat memesan ruang, dan fitur plagiarisme.
 
 This REST API is created by scraping data on
 
