@@ -10,7 +10,7 @@ This API is used to manage room bookings. Such as viewing all booked rooms or by
 
 API ini digunakan untuk mengelola pemesanan ruang. Seperti melihat semua ruang yang dipesan atau berdasarkan tanggal, melihat semua ruang yang belum dipesan atau berdasarkan tanggal, dapat memesan ruang, dan fitur plagiarisme.
 
-This REST API is created by scraping data on
+This REST API is created by web scraping on:
 
 - [FORM BOOKING DIGITAL LIBRARY ROOM](http://form.lib.uajy.ac.id/booking/default.aspx)
 - [CEK PENGGUNAAN RUANG](http://form.lib.uajy.ac.id/booking/CekJadwal.aspx)
@@ -18,6 +18,6 @@ This REST API is created by scraping data on
 - [CEK STATUS PLAGIARISME](http://form.lib.uajy.ac.id/plagiarisme/status.aspx)
 
 ## DOCUMENTATIONS
-This API is documented using *SWAGGER*
+This API documented using *SWAGGER*
 
 **[API DOCUMENTATIONS](https://lib-uajy.vercel.app/)**
