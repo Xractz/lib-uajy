@@ -113,7 +113,6 @@ class FetchData(Token):
 class Room(FetchData):
   def __init__(self):
     super().__init__()
-    self.fetch_all_data()
     self.list_time = ["08.00 - 09.30 WIB", "09.30 - 11.00 WIB", "11.00 - 12.30 WIB", "12.30 - 14.00 WIB", "14.00 - 15.30 WIB", "15.30 - 17.00 WIB", "17.00 - 18.30 WIB"]
     self.list_room = ["Discussion Room 1", "Discussion Room 2", "Discussion Room 3", "Leisure Room 1"]
 
