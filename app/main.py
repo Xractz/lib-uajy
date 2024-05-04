@@ -118,12 +118,14 @@ class Room(FetchData):
     self.list_room = ["Discussion Room 1", "Discussion Room 2", "Discussion Room 3", "Leisure Room 1"]
 
   def get_booked_data(self):
+    self.fetch_all_data()
     if self.groupedDataOutput:
       return {"bookedRoom": self.groupedDataOutput, "message": "Successfully retrieved the booked room."}, 200
     else:
       return {"bookedRoom": {}, "message": "Booked room not found"}, 404
   
   def get_booked_data_by_date(self, date):
+    self.fetch_all_data()
     formatted_date = f"{date[:2]}/{date[2:4]}/{date[4:]}"
     if formatted_date in self.groupedData:
       output = {room: [] for room in self.list_room}
@@ -140,6 +142,7 @@ class Room(FetchData):
       return {"bookedRoom": {}, "message": "Successfully retrieved the booked room by date."}, 404
 
   def get_available_rooms(self, date=None):
+    self.fetch_all_data()
     listTime = self.list_time
     listRoom = self.list_room
 
@@ -181,16 +184,16 @@ class Room(FetchData):
 
     output = {date: room for date, room in output.items() if datetime.now(self.tz).strptime(date, '%d/%m/%Y') >= datetime.now(self.tz).strptime(self.current_date, '%d/%m/%Y')}
     output = {date: {room: sorted(times) for room, times in rooms.items()} for date, rooms in output.items()}
-    
-    if date:
-      return output
 
     if output:
+      if date:
+        return output
       return {"roomAvailable": output, "message": "Successfully retrieved the available room."}, 200
     else:
       return {"roomAvailable": {}, "message": "There's no available room right now"}, 404
 
   def get_available_rooms_by_date(self, date_str):
+    self.fetch_all_data()
     formatted_date = f"{date_str[:2]}/{date_str[2:4]}/{date_str[4:]}"
     if formatted_date in self.groupedDataOutput:
       output = self.get_available_rooms()[formatted_date]
