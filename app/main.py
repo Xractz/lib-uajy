@@ -1,7 +1,5 @@
 import re, pytz, requests
 from datetime import datetime, date
-import concurrent.futures
-import asyncio
 
 class Token:
   def __init__(self):
@@ -57,7 +55,7 @@ class FetchData(Token):
       raise ValueError("Page number has not been fetched yet. Call fetch_max_page() first.")
     return self.pageNumber
 
-  def fetch_page_data(self, page):
+  async def fetch_page_data(self, page):
     self.fetch_token(self.urlJadwal)
     token = self.get_token()
     
@@ -111,15 +109,8 @@ class FetchData(Token):
     self.groupedData = {}
     self.groupedDataOutput = {}
     self.fetch_max_page()
-
-    loop = asyncio.get_event_loop()
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        tasks = [
-            loop.run_in_executor(executor, self.fetch_page_data, page)
-            for page in range(1, int(self.get_max_page()) + 1)
-        ]
-        await asyncio.gather(*tasks)
-
+    for i in range(1, int(self.get_max_page()) + 1):
+      await self.fetch_page_data(i)
     await self.group_data()
 
 class Room(FetchData):
