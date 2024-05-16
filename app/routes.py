@@ -55,7 +55,7 @@ room = Room()
   }
 )
 async def all_booked():
-  message, status = room.get_booked_data()
+  message, status = await room.get_booked_data()
   return JSONResponse(content=message, status_code=status)
   
 @router.get(
@@ -115,7 +115,7 @@ async def all_booked():
   }
 )
 async def booked_by_date(date: str):
-  message, status = room.get_booked_data_by_date(date)
+  message, status = await room.get_booked_data_by_date(date)
   return JSONResponse(content=message, status_code=status)
   
 @router.get(
@@ -172,7 +172,7 @@ async def booked_by_date(date: str):
   }
 )
 async def available_rooms():
-  message, status = room.get_available_rooms()
+  message, status = await room.get_available_rooms()
   return JSONResponse(content=message, status_code=status)
 
 @router.get(
@@ -232,7 +232,7 @@ async def available_rooms():
 )
 async def available_rooms_by_date(date: str):
   try:
-    message, status = room.get_available_rooms_by_date(date)
+    message, status = await room.get_available_rooms_by_date(date)
   except ValueError as e:
     return JSONResponse(content={"message": "There's no available room right now", "error" : str(e)}, status_code=500)
   except TypeError as e:
@@ -313,7 +313,7 @@ class BookingRoom(BaseModel):
   }
 )
 async def booking_room(data: BookingRoom):
-  message, status = room.booking_room(data.npm, data.room, data.date, data.time)
+  message, status = await room.booking_room(data.npm, data.room, data.date, data.time)
   return JSONResponse(content=message, status_code=status)
   
 @router.post(
