@@ -171,7 +171,7 @@ async def booked_by_date(date: str):
     }
   }
 )
-def available_rooms():
+async def available_rooms():
   message, status = room.get_available_rooms()
   return JSONResponse(content=message, status_code=status)
 
@@ -230,11 +230,13 @@ def available_rooms():
     }
   }
 )
-def available_rooms_by_date(date: str):
+async def available_rooms_by_date(date: str):
   try:
     message, status = room.get_available_rooms_by_date(date)
   except ValueError as e:
-    return JSONResponse(content={"message": str(e)}, status_code=400)
+    return JSONResponse(content={"message": "There's no available room right now", "error" : str(e)}, status_code=500)
+  except TypeError as e:
+    return JSONResponse(content={"message": "There's no available room right now", "error" : str(e)}, status_code=500)
   
   return JSONResponse(content=message, status_code=status)
 
@@ -310,7 +312,7 @@ class BookingRoom(BaseModel):
   }
   }
 )
-def booking_room(data: BookingRoom):
+async def booking_room(data: BookingRoom):
   message, status = room.booking_room(data.npm, data.room, data.date, data.time)
   return JSONResponse(content=message, status_code=status)
   
@@ -390,7 +392,7 @@ def booking_room(data: BookingRoom):
     }
   }
 )
-def upload(
+async def upload(
   file: Annotated[UploadFile, File(...)],
   npm: Annotated[int, Form(...)],
   title: Annotated[str, Form(...)]
@@ -444,7 +446,7 @@ class PlagiarismStatus(BaseModel):
     }
   }
 )
-def check_status(data: PlagiarismStatus):
+async def check_status(data: PlagiarismStatus):
   plagiarism = Plagiarism(data.npm)
   message, status = plagiarism.status()
   
