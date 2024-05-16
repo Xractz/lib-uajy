@@ -55,7 +55,7 @@ class FetchData(Token):
       raise ValueError("Page number has not been fetched yet. Call fetch_max_page() first.")
     return self.pageNumber
 
-  def fetch_page_data(self, page):
+  async def fetch_page_data(self, page):
     self.fetch_token(self.urlJadwal)
     token = self.get_token()
     
@@ -104,13 +104,13 @@ class FetchData(Token):
       self.groupedDataOutput[date][room].append(data)
       self.groupedDataOutput = {date: room for date, room in self.groupedDataOutput.items() if datetime.now(self.tz).strptime(date, '%d/%m/%Y') >= datetime.now(self.tz).strptime(self.current_date, '%d/%m/%Y')}
 
-  def fetch_all_data(self):
+  async def fetch_all_data(self):
     self.bookedData = []
     self.groupedData = {}
     self.groupedDataOutput = {}
     self.fetch_max_page()
     for i in range(1, int(self.get_max_page()) + 1):
-      self.fetch_page_data(i)
+      await self.fetch_page_data(i)
     self.group_data()
 
 class Room(FetchData):
@@ -119,15 +119,15 @@ class Room(FetchData):
     self.list_time = ["08.00 - 09.30 WIB", "09.30 - 11.00 WIB", "11.00 - 12.30 WIB", "12.30 - 14.00 WIB", "14.00 - 15.30 WIB", "15.30 - 17.00 WIB", "17.00 - 18.30 WIB"]
     self.list_room = ["Discussion Room 1", "Discussion Room 2", "Discussion Room 3", "Leisure Room 1"]
 
-  def get_booked_data(self):
-    self.fetch_all_data()
+  async def get_booked_data(self):
+    await self.fetch_all_data()
     if self.groupedDataOutput:
       return {"bookedRoom": self.groupedDataOutput, "message": "Successfully retrieved the booked room."}, 200
     else:
       return {"bookedRoom": {}, "message": "Booked room not found"}, 404
   
-  def get_booked_data_by_date(self, date):
-    self.fetch_all_data()
+  async def get_booked_data_by_date(self, date):
+    await self.fetch_all_data()
     formatted_date = f"{date[:2]}/{date[2:4]}/{date[4:]}"
     if formatted_date in self.groupedData:
       output = {room: [] for room in self.list_room}
@@ -141,10 +141,10 @@ class Room(FetchData):
 
       return {"bookedRoom": output, "message": "Successfully retrieved the booked room by date."}, 200
     else:
-      return {"bookedRoom": {}, "message": "Successfully retrieved the booked room by date."}, 404
+      return {"bookedRoom": {}, "message": "There's no booked room right now"}, 404
 
-  def get_available_rooms(self, dates=None):
-    self.fetch_all_data()
+  async def get_available_rooms(self, dates=None):
+    await self.fetch_all_data()
     listTime = self.list_time
     listRoom = self.list_room
 
@@ -195,11 +195,11 @@ class Room(FetchData):
     else:
       return {"roomAvailable": {}, "message": "There's no available room right now"}, 404
 
-  def get_available_rooms_by_date(self, date_str):
-    self.fetch_all_data()
+  async def get_available_rooms_by_date(self, date_str):
+    await self.fetch_all_data()
     formatted_date = f"{date_str[:2]}/{date_str[2:4]}/{date_str[4:]}"
     if formatted_date in self.groupedDataOutput:
-      output = self.get_available_rooms(formatted_date)
+      output = await self.get_available_rooms(formatted_date)
       return {"roomAvailable": output, "message": "Successfully retrieved the available room by date."}, 200
     else:
       formatted_date = date(int(date_str[4:]), int(date_str[2:4].lstrip('0')), int(date_str[:2].lstrip('0')))
