@@ -213,6 +213,8 @@ class Room(FetchData):
           return {"roomAvailable": output, "message": "Successfully retrieved the available room by date."}, 200 
         else:
           return {"roomAvailable": {}, "message": "There's no available room right now"}, 404
+      else:
+        return {"roomAvailable": {}, "message": "There's no available room right now"}, 404
 
   def get_information(self, npm):
     self.fetch_token()
