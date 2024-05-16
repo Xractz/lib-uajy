@@ -105,6 +105,9 @@ class FetchData(Token):
       self.groupedDataOutput = {date: room for date, room in self.groupedDataOutput.items() if datetime.now(self.tz).strptime(date, '%d/%m/%Y') >= datetime.now(self.tz).strptime(self.current_date, '%d/%m/%Y')}
 
   def fetch_all_data(self):
+    self.bookedData = []
+    self.groupedData = {}
+    self.groupedDataOutput = {}
     self.fetch_max_page()
     for i in range(1, int(self.get_max_page()) + 1):
       self.fetch_page_data(i)
