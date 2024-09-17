@@ -264,7 +264,7 @@ class Room(FetchData):
     time_two = time.split(" ")[2]
     return time_two >= self.current_time
 
-  def booking_room(self, npm, room, date, time):
+  async def booking_room(self, npm, room, date, time):
     check_data = self.get_information(npm)
     if not check_data:
       return {"message": "Oooops...  Your NPM/NPP is not registered."}, 404
