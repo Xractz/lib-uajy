@@ -1,23 +1,72 @@
 # Library Atma Jaya Yogyakarta University (UAJY)
 
-![image](https://github.com/Xractz/lib-uajy/assets/48348791/3adaf772-be9a-4db2-a6f5-ce130c574f9d)
+API tidak resmi untuk pemesanan ruang perpustakaan Universitas Atma Jaya Yogyakarta (UAJY).
 
-### Unofficial REST API Library Atma Jaya Yogyakarta University (UAJY)
-
-## Overview
-
-This API is used to manage room bookings. Such as viewing all booked rooms or by date, viewing all unbooked rooms or by date, being able to book rooms, and plagiarism features.
-
-API ini digunakan untuk mengelola pemesanan ruang. Seperti melihat semua ruang yang dipesan atau berdasarkan tanggal, melihat semua ruang yang belum dipesan atau berdasarkan tanggal, dapat memesan ruang, dan fitur plagiarisme.
-
-This REST API is created by web scraping on:
+API ini dibuat dengan melakukan web scraping pada:
 
 - [FORM BOOKING DIGITAL LIBRARY ROOM](http://form.lib.uajy.ac.id/booking/default.aspx)
 - [CEK PENGGUNAAN RUANG](http://form.lib.uajy.ac.id/booking/CekJadwal.aspx)
-- [CEK PLAGIARISME](http://form.lib.uajy.ac.id/plagiarisme/)
-- [CEK STATUS PLAGIARISME](http://form.lib.uajy.ac.id/plagiarisme/status.aspx)
 
-## DOCUMENTATIONS
-This API documented using *SWAGGER*
+## Fitur
 
-**[API DOCUMENTATIONS](https://lib-uajy.vercel.app/)**
+- Lihat daftar ruang yang sudah dipesan (semua / per tanggal)
+- Lihat daftar ruang yang tersedia (semua / per tanggal)
+- Pemesanan ruang
+
+## Prasyarat
+
+- Python 3.9 atau lebih baru
+- `pip3`
+
+## Instalasi
+
+```bash
+git clone https://github.com/Xractz/lib-uajy.git
+cd lib-uajy
+pip3 install -r requirements.txt
+```
+
+## Menjalankan (lokal)
+
+```bash
+python3 run.py
+```
+
+Aplikasi berjalan di `http://localhost:8000`. Dokumentasi Swagger tersedia di root (`/`).
+
+## Dokumentasi API
+
+API ini didokumentasikan menggunakan **Swagger**:
+
+**[API DOCUMENTATION](https://lib-uajy.vercel.app/)**
+
+## Endpoint
+
+| Method | Endpoint            | Deskripsi                            |
+|--------|---------------------|--------------------------------------|
+| GET    | `/booked`           | Semua ruang yang sudah dipesan       |
+| GET    | `/booked/{date}`    | Ruang dipesan pada tanggal tertentu  |
+| GET    | `/available`        | Semua ruang yang tersedia            |
+| GET    | `/available/{date}` | Ruang tersedia pada tanggal tertentu |
+| POST   | `/booking`          | Pesan ruang / cek data mahasiswa     |
+
+`{date}` menggunakan format `DDMMYYYY` (contoh `29042024` untuk 29/04/2024).
+
+## Struktur Proyek
+
+```
+app/
+├── __init__.py        # Setup aplikasi FastAPI
+├── config.py          # Konstanta (URL, ruang, slot waktu)
+└── booking/
+    ├── scraper.py     # BookingScraper (HTTP + parsing)
+    ├── service.py     # RoomService (logika bisnis)
+    └── routes.py      # Router FastAPI
+```
+
+## Menjalankan Tes
+
+```bash
+pip3 install pytest pytest-asyncio
+python3 -m pytest -q
+```

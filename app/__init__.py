@@ -1,10 +1,11 @@
 from fastapi import FastAPI
-from app.routes import router
+
+from app.booking.routes import router
 
 app = FastAPI(
     title="Library Universitas Atma Jaya Yogyakarta",
-    version="0.1.0", 
-    description="API untuk peminjaman buku di perpustakaan dan cek plagiarisme UAJY", 
+    version="0.2.0",
+    description="API tidak resmi untuk pemesanan ruang perpustakaan UAJY",
     docs_url="/",
     redoc_url="/redocs",
 )
