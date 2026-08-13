@@ -119,7 +119,7 @@ class RoomService:
         if not self._is_valid_date(date):
             return {"message": "Gunakan format DD/MM/YYYY untuk kolom 'date'"}, 400
         if time not in config.TIME_SLOTS:
-            return {"message": "Slot waktu yang valid: 08.00 - 09.30 WIB, 09.30 - 11.00 WIB, 11.00 - 12.30 WIB, 12.30 - 14.00 WIB, 14.00 - 15.30 WIB, 15.30 - 17.00 WIB, atau 17.00 - 18.30 WIB"}, 400
+            return {"message": "Slot waktu yang valid: " + ", ".join(config.TIME_SLOTS)}, 400
         if not self._is_valid_time(date, time):
             return {"message": "Tidak dapat memesan ruang pada waktu ini"}, 400
 
