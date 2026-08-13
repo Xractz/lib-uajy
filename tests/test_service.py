@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 
@@ -27,10 +27,13 @@ class FakeScraper:
 
 # hari ini dalam zona WIB, format DD/MM/YYYY
 TODAY = datetime.now(config.TZ).strftime("%d/%m/%Y")
+# 7 hari ke depan (tanggal stabil untuk test availability yang tidak
+# bergantung pada waktu berjalan — semua slot masih di masa depan)
+FUTURE = (datetime.now(config.TZ) + timedelta(days=7)).strftime("%d/%m/%Y")
 
 BOOKINGS = [
-    {"room": "Discussion Room 1", "date": TODAY, "time": "08.00 - 09.30 WIB", "name": "A"},
-    {"room": "Discussion Room 2", "date": TODAY, "time": "09.30 - 11.00 WIB", "name": "B"},
+    {"room": "Discussion Room 1", "date": FUTURE, "time": "08.00 - 09.30 WIB", "name": "A"},
+    {"room": "Discussion Room 2", "date": FUTURE, "time": "09.30 - 11.00 WIB", "name": "B"},
 ]
 
 
@@ -43,8 +46,8 @@ def service():
 async def test_get_booked_rooms_groups_by_room(service):
     body, status = await service.get_booked_rooms()
     assert status == 200
-    assert TODAY in body["bookedRoom"]
-    assert body["bookedRoom"][TODAY]["Discussion Room 1"][0]["name"] == "A"
+    assert FUTURE in body["bookedRoom"]
+    assert body["bookedRoom"][FUTURE]["Discussion Room 1"][0]["name"] == "A"
 
 
 @pytest.mark.asyncio
@@ -58,9 +61,9 @@ async def test_get_booked_by_date_returns_empty_when_none(service):
 async def test_available_rooms_removes_booked_slot(service):
     body, status = await service.get_available_rooms()
     assert status == 200
-    slots = body["roomAvailable"][TODAY]["Discussion Room 1"]
+    slots = body["roomAvailable"][FUTURE]["Discussion Room 1"]
     assert "08.00 - 09.30 WIB" not in slots
-    assert "17.00 - 18.30 WIB" in slots
+    assert "12.30 - 14.00 WIB" in slots
 
 
 @pytest.mark.asyncio

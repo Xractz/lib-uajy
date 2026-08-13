@@ -71,7 +71,7 @@ class BookingScraper:
                 **token,
             })
 
-        if "tidak terdaftar" in str(resp):
+        if "tidak terdaftar" in resp.html_content:
             raise StudentNotFoundError("NPM/NPP tidak terdaftar")
 
         return {
@@ -107,7 +107,7 @@ class BookingScraper:
                 **token,
             })
 
-        text = str(resp)
+        text = resp.html_content
         # ponytail: regex di sini untuk ekstrak JS alert(), bukan parsing HTML
         match = re.search(r"alert\('(.+?)'\)", text)
         return match.group(1) if match else BOOKING_FAILED_MESSAGE
