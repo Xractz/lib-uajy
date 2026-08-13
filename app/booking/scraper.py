@@ -7,6 +7,9 @@ from scrapling.fetchers import FetcherSession
 from app import config
 
 
+BOOKING_FAILED_MESSAGE = "Pemesanan ruang gagal."
+
+
 class ScraperError(Exception):
     """Error umum saat scraping (HTTP gagal / elemen tidak ditemukan)."""
 
@@ -107,7 +110,7 @@ class BookingScraper:
         text = str(resp)
         # ponytail: regex di sini untuk ekstrak JS alert(), bukan parsing HTML
         match = re.search(r"alert\('(.+?)'\)", text)
-        return match.group(1) if match else "Booking room failed."
+        return match.group(1) if match else BOOKING_FAILED_MESSAGE
 
     # ---- Parse helper (murni, unit-testable) ----
 

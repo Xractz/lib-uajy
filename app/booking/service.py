@@ -3,7 +3,7 @@
 from datetime import datetime, date
 
 from app import config
-from app.booking.scraper import BookingScraper, StudentNotFoundError
+from app.booking.scraper import BOOKING_FAILED_MESSAGE, BookingScraper, StudentNotFoundError
 
 
 class RoomService:
@@ -71,16 +71,16 @@ class RoomService:
         today = self._today()
         future = {d: r for d, r in grouped.items() if self._parse_date(d) >= today}
         if future:
-            return {"bookedRoom": future, "message": "Successfully retrieved the booked room."}, 200
-        return {"bookedRoom": {}, "message": "Booked room not found"}, 404
+            return {"bookedRoom": future, "message": "Berhasil mengambil data ruang yang dipesan."}, 200
+        return {"bookedRoom": {}, "message": "Ruang yang dipesan tidak ditemukan."}, 404
 
     async def get_booked_by_date(self, date_str: str) -> tuple[dict, int]:
         formatted = self._format_date(date_str)
         bookings = await self.scraper.fetch_all_schedule()
         grouped = self._group_by_date(bookings)
         if formatted in grouped:
-            return {"bookedRoom": grouped[formatted], "message": "Successfully retrieved the booked room by date."}, 200
-        return {"bookedRoom": {}, "message": "There's no booked room right now"}, 404
+            return {"bookedRoom": grouped[formatted], "message": "Berhasil mengambil data ruang yang dipesan berdasarkan tanggal."}, 200
+        return {"bookedRoom": {}, "message": "Tidak ada ruang yang dipesan saat ini."}, 404
 
     async def get_available_rooms(self) -> tuple[dict, int]:
         bookings = await self.scraper.fetch_all_schedule()
@@ -88,22 +88,22 @@ class RoomService:
         today = self._today()
         dates = sorted(d for d in grouped if self._parse_date(d) >= today)
         if not dates:
-            return {"roomAvailable": {}, "message": "There's no available room right now"}, 404
+            return {"roomAvailable": {}, "message": "Tidak ada ruang yang tersedia saat ini."}, 404
         output = {}
         for d in dates:
             is_today = d == today.strftime("%d/%m/%Y")
             output[d] = self._available_for_date(grouped.get(d, {}), is_today)
-        return {"roomAvailable": output, "message": "Successfully retrieved the available room."}, 200
+        return {"roomAvailable": output, "message": "Berhasil mengambil data ruang yang tersedia."}, 200
 
     async def get_available_by_date(self, date_str: str) -> tuple[dict, int]:
         formatted = self._format_date(date_str)
         if self._parse_date(formatted) < self._today():
-            return {"roomAvailable": {}, "message": "There's no available room right now"}, 404
+            return {"roomAvailable": {}, "message": "Tidak ada ruang yang tersedia saat ini."}, 404
         bookings = await self.scraper.fetch_all_schedule()
         grouped = self._group_by_date(bookings)
         is_today = formatted == self._today().strftime("%d/%m/%Y")
         avail = self._available_for_date(grouped.get(formatted, {}), is_today)
-        return {"roomAvailable": avail, "message": "Successfully retrieved the available room by date."}, 200
+        return {"roomAvailable": avail, "message": "Berhasil mengambil data ruang yang tersedia berdasarkan tanggal."}, 200
 
     async def book_room(self, npm: int, room: str, date: str, time: str) -> tuple[dict, int]:
         # Hanya cek data mahasiswa (room/date/time kosong)
@@ -111,25 +111,25 @@ class RoomService:
             try:
                 student = await self.scraper.get_student_info(npm)
             except StudentNotFoundError:
-                return {"message": "Oooops...  Your NPM/NPP is not registered."}, 404
+                return {"message": "Oooops... NPM/NPP Anda tidak terdaftar."}, 404
             return {"npm": npm, "name": student["name"]}, 200
 
         if room not in config.ROOMS:
-            return {"message": "Valid rooms field are Discussion Room 1, Discussion Room 2, Discussion Room 3, or Leisure Room 1"}, 400
+            return {"message": "Ruang yang valid: Discussion Room 1, Discussion Room 2, Discussion Room 3, atau Leisure Room 1"}, 400
         if not self._is_valid_date(date):
-            return {"message": "Please use DD/MM/YYYY format for 'date' field"}, 400
+            return {"message": "Gunakan format DD/MM/YYYY untuk kolom 'date'"}, 400
         if time not in config.TIME_SLOTS:
-            return {"message": "Valid time slots are 08.00 - 09.30 WIB, 09.30 - 11.00 WIB, 11.00 - 12.30 WIB, 12.30 - 14.00 WIB, 14.00 - 15.30 WIB, 15.30 - 17.00 WIB, or 17.00 - 18.30 WIB"}, 400
+            return {"message": "Slot waktu yang valid: 08.00 - 09.30 WIB, 09.30 - 11.00 WIB, 11.00 - 12.30 WIB, 12.30 - 14.00 WIB, 14.00 - 15.30 WIB, 15.30 - 17.00 WIB, atau 17.00 - 18.30 WIB"}, 400
         if not self._is_valid_time(date, time):
-            return {"message": "Cannot book room at this time"}, 400
+            return {"message": "Tidak dapat memesan ruang pada waktu ini"}, 400
 
         try:
             student = await self.scraper.get_student_info(npm)
         except StudentNotFoundError:
-            return {"message": "Oooops...  Your NPM/NPP is not registered."}, 404
+            return {"message": "Oooops... NPM/NPP Anda tidak terdaftar."}, 404
 
         message = await self.scraper.submit_booking(
             npm, student["name"], student["email"], student["token"], room, date, time
         )
-        status = 400 if message == "Booking room failed." else 200
+        status = 400 if message == BOOKING_FAILED_MESSAGE else 200
         return {"npm": npm, "name": student["name"], "message": message}, status

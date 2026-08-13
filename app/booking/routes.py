@@ -1,9 +1,8 @@
 """FastAPI router: wiring HTTP ke RoomService. Tanpa logika bisnis."""
 
-from typing import Optional
+from typing import Dict, List, Optional, Union
 
-from fastapi import APIRouter
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Response
 from pydantic import BaseModel
 
 from app.booking.scraper import BookingScraper
@@ -13,48 +12,36 @@ router = APIRouter()
 service = RoomService(BookingScraper())
 
 
-@router.get(
-    "/booked",
-    tags=["BOOKED ROOM"],
-    summary="Lihat semua ruang yang sudah dipesan",
-    description="Mengembalikan data pemesanan ruang, dikelompokkan per tanggal dan ruang.",
-)
-async def all_booked():
-    data, status = await service.get_booked_rooms()
-    return JSONResponse(content=data, status_code=status)
+# ---- Schema (dokumentasi Swagger) ----
+
+class BookingSlot(BaseModel):
+    """Satu slot terpakai: waktu + nama pemesan."""
+    time: str
+    name: str
 
 
-@router.get(
-    "/booked/{date}",
-    tags=["BOOKED ROOM"],
-    summary="Lihat ruang yang dipesan pada tanggal tertentu",
-    description="`date` format DDMmYYYY, contoh `29042024` untuk 29/04/2024.",
-)
-async def booked_by_date(date: str):
-    data, status = await service.get_booked_by_date(date)
-    return JSONResponse(content=data, status_code=status)
+class BookedRoomResponse(BaseModel):
+    """Respons `/booked`: pemesanan dikelompokkan per tanggal lalu per ruang."""
+    bookedRoom: Dict[str, Dict[str, List[BookingSlot]]]
+    message: str
 
 
-@router.get(
-    "/available",
-    tags=["AVAILABLE ROOM"],
-    summary="Lihat semua ruang yang tersedia",
-    description="Mengembalikan slot waktu kosong per ruang, per tanggal (mulai hari ini).",
-)
-async def available_rooms():
-    data, status = await service.get_available_rooms()
-    return JSONResponse(content=data, status_code=status)
+class BookedRoomByDateResponse(BaseModel):
+    """Respons `/booked/{date}`: pemesanan dikelompokkan per ruang."""
+    bookedRoom: Dict[str, List[BookingSlot]]
+    message: str
 
 
-@router.get(
-    "/available/{date}",
-    tags=["AVAILABLE ROOM"],
-    summary="Lihat ruang yang tersedia pada tanggal tertentu",
-    description="`date` format DDMmYYYY, contoh `29042024` untuk 29/04/2024.",
-)
-async def available_rooms_by_date(date: str):
-    data, status = await service.get_available_by_date(date)
-    return JSONResponse(content=data, status_code=status)
+class AvailableRoomResponse(BaseModel):
+    """Respons `/available`: slot kosong per tanggal lalu per ruang."""
+    roomAvailable: Dict[str, Dict[str, List[str]]]
+    message: str
+
+
+class AvailableRoomByDateResponse(BaseModel):
+    """Respons `/available/{date}`: slot kosong per ruang."""
+    roomAvailable: Dict[str, List[str]]
+    message: str
 
 
 class BookingRequest(BaseModel):
@@ -64,15 +51,92 @@ class BookingRequest(BaseModel):
     time: Optional[str] = None
 
 
+class BookingSuccess(BaseModel):
+    npm: int
+    name: str
+    message: Optional[str] = None
+
+
+class ErrorResponse(BaseModel):
+    message: str
+
+
+BookingResponse = Union[BookingSuccess, ErrorResponse]
+
+
+# ---- Endpoint ----
+
+@router.get(
+    "/booked",
+    response_model=BookedRoomResponse,
+    tags=["BOOKED ROOM"],
+    summary="Lihat semua ruang yang sudah dipesan",
+    description="Mengembalikan data pemesanan ruang, dikelompokkan per tanggal dan ruang.",
+    responses={404: {"model": ErrorResponse, "description": "Tidak ada ruang yang dipesan"}},
+)
+async def all_booked(response: Response):
+    data, status = await service.get_booked_rooms()
+    response.status_code = status
+    return data
+
+
+@router.get(
+    "/booked/{date}",
+    response_model=BookedRoomByDateResponse,
+    tags=["BOOKED ROOM"],
+    summary="Lihat ruang yang dipesan pada tanggal tertentu",
+    description="`date` format DDMmYYYY, contoh `29042024` untuk 29/04/2024.",
+    responses={404: {"model": ErrorResponse, "description": "Tidak ada ruang yang dipesan pada tanggal tersebut"}},
+)
+async def booked_by_date(date: str, response: Response):
+    data, status = await service.get_booked_by_date(date)
+    response.status_code = status
+    return data
+
+
+@router.get(
+    "/available",
+    response_model=AvailableRoomResponse,
+    tags=["AVAILABLE ROOM"],
+    summary="Lihat semua ruang yang tersedia",
+    description="Mengembalikan slot waktu kosong per ruang, per tanggal (mulai hari ini).",
+    responses={404: {"model": ErrorResponse, "description": "Tidak ada ruang yang tersedia"}},
+)
+async def available_rooms(response: Response):
+    data, status = await service.get_available_rooms()
+    response.status_code = status
+    return data
+
+
+@router.get(
+    "/available/{date}",
+    response_model=AvailableRoomByDateResponse,
+    tags=["AVAILABLE ROOM"],
+    summary="Lihat ruang yang tersedia pada tanggal tertentu",
+    description="`date` format DDMmYYYY, contoh `29042024` untuk 29/04/2024.",
+    responses={404: {"model": ErrorResponse, "description": "Tidak ada ruang yang tersedia pada tanggal tersebut"}},
+)
+async def available_rooms_by_date(date: str, response: Response):
+    data, status = await service.get_available_by_date(date)
+    response.status_code = status
+    return data
+
+
 @router.post(
     "/booking",
+    response_model=BookingResponse,
     tags=["BOOKING ROOM"],
     summary="Pesan ruang (atau cek data mahasiswa)",
     description=(
         "Jika `room`, `date`, `time` dikosongkan, endpoint hanya mengembalikan "
         "nama & NPM. Jika diisi, endpoint memproses pemesanan ruang."
     ),
+    responses={
+        400: {"model": ErrorResponse, "description": "Data booking tidak valid"},
+        404: {"model": ErrorResponse, "description": "NPM/NPP tidak terdaftar"},
+    },
 )
-async def booking_room(data: BookingRequest):
+async def booking_room(data: BookingRequest, response: Response):
     body, status = await service.book_room(data.npm, data.room, data.date, data.time)
-    return JSONResponse(content=body, status_code=status)
+    response.status_code = status
+    return body
